@@ -1,58 +1,120 @@
-# Project Overview
+# 📞 Project Overview
 
-This repository hosts an AI-powered hotline application designed to process Arabic (Egyptian dialect) voice calls. The system transcribes audio inputs, generates context-aware responses using various LLMs, and synthesizes reply audio for playback. It supports multi-tenant configurations, allowing users to upload and manage their own knowledge bases and define custom action triggers.
+This repository contains an AI-powered hotline platform that processes Arabic (Egyptian dialect) voice calls. The system performs the following key functions:
 
-# Technical Stack
+- Transcribes spoken audio using **Munsit-1 STT**
+- Passes transcripts to **multiple LLM APIs** (GPT-4, Claude, Mistral) for dynamic response generation
+- Synthesizes reply audio via **ElevenLabs TTS**
+- Supports **user-uploaded knowledge sources** and **custom automation actions**
+- Enables **multi-tenant operations**, with clear user isolation and document separation
 
-- **Backend**: FastAPI (Python)
-- **Database**: PostgreSQL with JSONB and pgvector extensions
-- **Caching & Queueing**: Redis
-- **Frontend**: Next.js
-- **Asynchronous Tasks**: Celery
-- **Speech-to-Text (STT)**: Munsit-1 API
-- **Text-to-Speech (TTS)**: ElevenLabs API
-- **LLMs**: GPT-4, Claude, Mistral (interchangeable via abstraction layer)
+The architecture is a modular monolith, designed to be future-ready for microservice extraction.
 
-# Coding Standards
+---
 
-- Utilize asynchronous programming paradigms (`async`/`await`) throughout the FastAPI application.
-- Employ SQLAlchemy for ORM interactions with PostgreSQL.
-- Define data models using Pydantic for validation and serialization.
-- Organize code into modular components: `api`, `services`, `models`, `schemas`, `core`, and `workers`.
-- Implement environment-based configurations using `pydantic.BaseSettings`.
-- Adhere to PEP 8 coding style guidelines.
+# 🧱 Technical Stack
 
-# Functional Requirements
+- **Backend**: FastAPI (Python, async-first)
+- **Frontend**: Next.js (React + SSR)
+- **Database**: PostgreSQL (with `JSONB` and `pgvector`)
+- **Cache & Queue**: Redis (via Celery)
+- **LLMs**: OpenAI GPT-4, Anthropic Claude, Mistral — interchangeable via abstraction layer
+- **STT**: Munsit-1 API (Arabic dialect-optimized)
+- **TTS**: ElevenLabs API
 
-- Develop endpoints to handle audio uploads, transcription via Munsit-1, response generation through selected LLMs, and TTS synthesis using ElevenLabs.
-- Enable users to upload various document formats (e.g., PDFs, CSVs) as knowledge sources.
-- Implement a retrieval-augmented generation (RAG) system for context-aware responses.
-- Allow users to define custom actions triggered by specific intents, such as updating a Google Sheet or sending data to a CRM.
-- Ensure the system can dynamically switch between different LLM APIs based on user preferences or availability.
+---
 
-# Security and Best Practices
+# ✅ Architectural Guidelines
 
-- Validate and sanitize all user inputs to prevent injection attacks.
-- Secure API endpoints using JWT-based authentication.
-- Store sensitive information, such as API keys and database credentials, in environment variables; never hard-code them.
-- Implement rate limiting to prevent abuse and ensure fair usage.
-- Log all operations with appropriate log levels and ensure logs do not contain sensitive information.
+- Follow a **modular, domain-driven structure**, using folders like `modules/{domain}/routers, services, schemas, integrations`
+- Design each module to be **isolated, independently testable**, and optionally extractable into a microservice
+- Encapsulate external API access (e.g., ElevenLabs, OpenAI) inside `integrations/` folders
+- Use `shared/` for cross-cutting concerns (e.g., config, events, logging, exceptions)
 
-# Development and Deployment
+---
 
-- Use Docker and Docker Compose for containerization and orchestration of services.
-- Write unit and integration tests for all critical components.
-- Set up continuous integration and deployment (CI/CD) pipelines to automate testing and deployment processes.
-- Monitor application performance and errors using appropriate monitoring tools.
+# 🔐 Security & Resilience
 
-# Interaction with Copilot
+- Use **JWT-based authentication** and ensure all user data is **tenant-isolated**
+- **Never** hard-code API keys or credentials; load from `.env` via `pydantic.BaseSettings`
+- Validate all external input and **sanitize against injection**
+- Add fallback handling for failures in LLM, STT, or TTS services
+- Rate-limit public endpoints to prevent abuse
+- Store audio/text logs carefully and respect privacy constraints
+- **Implement graceful degradation** - applications should start and provide basic functionality even when external dependencies (database, Redis, external APIs) are unavailable
+- Use comprehensive exception handling with custom exception classes for different error types
 
-- When generating code, follow the project's modular structure and coding standards.
-- For new features, create corresponding Pydantic models, SQLAlchemy schemas, and FastAPI routes.
-- When integrating with external APIs (e.g., Munsit-1, ElevenLabs), encapsulate interactions within dedicated service classes.
-- For user-defined actions, design a plugin-like architecture that allows easy addition and management of custom triggers.
+---
 
-# Notes
+# 🧪 Testing & DevOps
 
-- Always seek clarification if a task description lacks sufficient detail.
-- Prioritize code readability, maintainability, and scalability in all implementations.
+- Write **unit tests** per module and **integration tests** for cross-cutting workflows
+- Include a robust `conftest.py` with DB/session fixtures
+- Ensure compatibility with `docker-compose` and use `.env.example` for shared configs
+- **Create application startup tests** to verify endpoints and basic functionality work correctly
+- Test error scenarios and fallback behaviors when external services are unavailable
+- CI/CD should run `pytest`, `ruff`/`black`, and build Docker images
+- Monitor API performance and service uptime using Prometheus or equivalent
+
+---
+
+# 🧠 Copilot Usage Instructions
+
+When writing or completing code, **prioritize these behaviors**:
+
+### ✅ Generate code that:
+- Uses **async/await** consistently in API and service layers
+- Uses **SQLAlchemy ORM** with PostgreSQL + pgvector
+- Defines Pydantic models for all request/response schemas
+- Respects the existing modular structure and file placement
+- Uses `Depends()` for dependency injection of DB, current user, etc.
+- Uses `logging` from `shared/utils/logging.py` for logs
+- Names functions and variables **explicitly** — avoid vague names like `process()`
+- **Implements proper error handling** with try-catch blocks and graceful fallbacks
+- **Includes proper lifespan management** for FastAPI applications with startup/shutdown handlers
+
+### ❌ Avoid code that:
+- Writes logic directly inside routers (always call a service layer)
+- Uses blocking I/O in async routes (e.g. `open()`, `requests`)
+- Hard-codes file paths, secrets, or service endpoints
+- Assumes single-user context or stores global state
+- **Fails catastrophically when external services are unavailable**
+- **Lacks proper exception handling or logs errors inadequately**
+
+---
+
+# 🧩 Functional Considerations
+
+- STT, LLM, and TTS are orchestrated in a single flow, which should be broken into **service layers**
+- LLM provider should be **selectable per tenant or per request**, with fallbacks if one fails
+- Document upload (PDF, CSV, DOCX) must support **Arabic text extraction**, clean chunking, and embedding via pgvector
+- Automation actions (e.g., "update CRM", "write to Sheet") should be implemented as **plugin handlers** with clear interfaces
+- Consider memory and performance constraints when chaining LLM + TTS responses — keep logs for diagnostics
+
+---
+
+# 🌍 Language and Localization
+
+- Ensure accurate processing and generation for **Egyptian Arabic**
+- Support TTS/STT behavior testing with realistic dialectal samples
+- Use UTF-8 and `dir="rtl"` when needed for frontend integration
+
+---
+
+# 🧑‍💻 Developer Notes
+
+- I have a .NET background — C#-style modularity and separation of concerns are familiar, but please follow Python idioms (PEP8, async context, explicit dependency injection)
+- Use type hints and docstrings throughout the codebase
+- Prefer readability and testability over one-liners or premature optimization
+- Be thoughtful about interfaces — code should be extensible and cleanly layered
+
+---
+
+# ✅ Summary Goals for Copilot
+
+- Respect multi-layered modular design
+- Use clean naming and typing conventions
+- Favor isolated business logic in services
+- Handle async I/O properly
+- Consider security, fallback, and multilingual behavior in all responses
+

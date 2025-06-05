@@ -1,28 +1,28 @@
-# 🎙️ AI Phone Call Processing System
+# 🎙️ AI Hotline Backend
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-latest-green.svg)](https://fastapi.tiangolo.com/)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A simple yet powerful AI-powered phone call processing system that allows businesses to link phone numbers to AI agents for automated sales, customer service, and food ordering calls. Built with FastAPI, PostgreSQL, Redis, and Next.js.
+An AI-powered hotline platform that processes Arabic (Egyptian dialect) voice calls with real-time transcription, LLM processing, and text-to-speech synthesis. Built with modern Python async architecture and designed for scalability.
 
-## 🌟 Features
+## 🌟 Key Features
 
-### Core Capabilities
-- **📞 Phone Number Linking**: Connect phone numbers to AI agents for automated call handling
-- **🏢 Multi-Firm Support**: Multiple businesses can use the system with isolated data
-- **🤖 AI Call Processing**: Automated handling of sales, customer service, and ordering calls
-- **💬 Intelligent Responses**: Context-aware AI responses based on call type and business needs
-- **📊 Call Analytics**: Track and analyze call performance and outcomes
-- **🔧 Simple Configuration**: Easy setup for different business types and call scenarios
+### 🎯 Core Capabilities
+- **🗣️ Arabic Speech Processing**: Specialized for Egyptian dialect using Munsit-1 STT
+- **🤖 Multi-LLM Support**: Dynamic response generation via GPT-4, Claude, and Mistral
+- **🔊 Voice Synthesis**: High-quality Arabic TTS via ElevenLabs
+- **📚 Knowledge Integration**: User-uploaded documents with vector search
+- **⚡ Real-time Processing**: Async-first architecture for low latency
+- **🏢 Multi-tenant Architecture**: Complete data isolation between organizations
 
-### Technical Features
-- **🚀 FastAPI Backend**: Modern, fast Python web framework
-- **🗄️ PostgreSQL Database**: Reliable data storage with JSONB support
-- **⚡ Redis Caching**: Fast response times and session management
-- **🌐 Next.js Frontend**: Modern React-based user interface
-- **🔒 Secure**: Basic authentication and data isolation
-- **📱 RESTful API**: Clean, documented API endpoints
+### 🛠️ Technical Excellence
+- **🎯 Domain-Driven Design**: Modular monolith ready for microservice extraction
+- **🔒 Enterprise Security**: JWT authentication, rate limiting, input validation
+- **📊 Database Migrations**: Alembic-powered schema evolution
+- **🧪 Comprehensive Testing**: Unit and integration test coverage
+- **📈 Observability**: Structured logging and error tracking
 
 ## 🛠️ Technical Stack
 

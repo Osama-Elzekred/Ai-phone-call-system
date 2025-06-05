@@ -1,0 +1,1 @@
+"""Identity module for authentication and authorization."""
