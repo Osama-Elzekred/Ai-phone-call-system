@@ -25,6 +25,7 @@ from src.ai_hotline.shared.exceptions import (
 
 # Import module routers
 from src.ai_hotline.modules.identity.presentation.routers.auth import router as auth_router
+from src.ai_hotline.shared.routers.health import router as health_router
 
 # Setup logging first
 settings = get_settings()
@@ -174,17 +175,12 @@ def create_app() -> FastAPI:
                 "details": exc.details,
             }
         )
-    
-    # Health check endpoint
+      # Health check endpoint (legacy - kept for backward compatibility)
     @app.get("/health", tags=["Health"])
     async def health_check():
-        """Health check endpoint."""
-        return {
-            "status": "healthy",
-            "service": "ai-hotline-backend",
-            "version": settings.version,
-            "environment": settings.environment,
-        }
+        """Basic health check endpoint."""
+        from src.ai_hotline.shared.health import health_checker
+        return await health_checker.basic_health_check()
     
     @app.get("/", tags=["Root"])
     async def root():
@@ -194,8 +190,8 @@ def create_app() -> FastAPI:
             "version": settings.version,
             "docs": "/docs",
             "health": "/health",
-        }
-      # Include module routers
+        }      # Include module routers
+    app.include_router(health_router, tags=["Health"])
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
     # app.include_router(call_router, prefix="/api/v1/calls", tags=["Call Processing"])
     # app.include_router(audio_router, prefix="/api/v1/audio", tags=["Audio Processing"])
