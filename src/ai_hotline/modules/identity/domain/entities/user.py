@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID, uuid4
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 from src.ai_hotline.shared.exceptions import BusinessRuleViolationError
 
@@ -43,24 +43,36 @@ class User(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     # Basic info
-    email: str
+    email: EmailStr
     username: str
     password_hash: str
-    first_name: str
-    last_name: str
+    first_name: str = ""
+    last_name: str = ""
+    is_active: bool = True
     
     # Role and status
-    role: str = UserRole.VIEWER.value
-    status: str = UserStatus.PENDING_VERIFICATION.value
+    role: UserRole = UserRole.VIEWER
+    status: UserStatus = UserStatus.PENDING_VERIFICATION
     
     # Verification flags
     email_verified: bool = False
     phone_verified: bool = False
     
     # Security tracking
-    last_login: Optional[datetime] = None
     failed_login_attempts: int = 0
     locked_until: Optional[datetime] = None
+    last_login_at: Optional[datetime] = None
+    password_changed_at: Optional[datetime] = None
+    
+    # Profile
+    phone_number: Optional[str] = None
+    avatar_url: Optional[str] = None
+    timezone: str = "UTC"
+    language: str = "en"
+    bio: Optional[str] = None
+    
+    class Config:
+        use_enum_values = True
     
     @property
     def full_name(self) -> str:
@@ -127,7 +139,7 @@ class User(BaseModel):
     
     def record_login(self) -> None:
         """Record successful login."""
-        self.last_login = datetime.utcnow()
+        self.last_login_at = datetime.utcnow()
         self.failed_login_attempts = 0
         self.locked_until = None
     

@@ -14,8 +14,8 @@ class UserBase(BaseModel):
     """Base user schema."""
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=50)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
+    first_name: Optional[str] = Field(None, min_length=0, max_length=100)
+    last_name: Optional[str] = Field(None, min_length=0, max_length=100)
 
 
 class UserCreate(UserBase):
@@ -58,11 +58,11 @@ class UserResponse(UserBase):
     """Schema for user response."""
     id: UUID
     tenant_id: UUID
-    role: UserRole
+    role: Optional[UserRole]
     status: UserStatus
     email_verified: bool
     phone_verified: bool
-    last_login: Optional[datetime]
+    last_login: Optional[datetime] = None
     failed_login_attempts: int
     is_active: bool
     created_at: datetime
@@ -81,6 +81,50 @@ class UserList(BaseModel):
 
 
 # Authentication Schemas
+class RegisterTenantWithAdminRequest(BaseModel):
+    """Schema for tenant registration."""
+    tenant_name: str = Field(..., min_length=2, max_length=100)
+    tenant_display_name: str = Field(..., min_length=2, max_length=200)
+    admin_email: EmailStr
+    admin_password: str = Field(..., min_length=8, max_length=128)
+    admin_username: str = Field(..., min_length=3, max_length=50)
+
+class RegisterUserRequest(BaseModel):
+    """Schema for user registration request."""
+    email: EmailStr
+    username: str = Field(..., min_length=3, max_length=50)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    password: str = Field(..., min_length=8, max_length=128)
+    tenant_id: UUID
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v):
+        """Validate password strength."""
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        
+        has_upper = any(c.isupper() for c in v)
+        has_lower = any(c.islower() for c in v)
+        has_digit = any(c.isdigit() for c in v)
+        has_special = any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in v)
+        
+        strength_checks = [has_upper, has_lower, has_digit, has_special]
+        
+        if sum(strength_checks) < 3:
+            raise ValueError(
+                'Password must contain at least 3 of: uppercase, lowercase, digit, special character'
+            )
+        
+        return v
+    
+class RegisterResponse(BaseModel):
+    """Schema for user registration response."""
+    user: UserResponse
+    message: str = "User registered successfully"
+    status: str = "success"
+
 class LoginRequest(BaseModel):
     """Schema for login request."""
     email: EmailStr
@@ -93,8 +137,10 @@ class LoginResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
-    user: UserResponse
+    user: Optional[UserResponse]
 
+    class Config:
+        from_attributes = True
 
 class RefreshTokenRequest(BaseModel):
     """Schema for token refresh request."""

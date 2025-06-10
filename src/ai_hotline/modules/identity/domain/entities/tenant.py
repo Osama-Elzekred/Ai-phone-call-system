@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional, Dict, Any
 from uuid import UUID, uuid4
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from enum import Enum
 
 from src.ai_hotline.shared.exceptions import BusinessRuleViolationError
@@ -39,20 +39,44 @@ class Tenant(BaseModel):
     description: Optional[str] = None
     
     # Contact info
-    contact_email: str
+    contact_email: EmailStr
     contact_phone: Optional[str] = None
-      # Status and limits
-    status: str = TenantStatus.TRIAL.value
+    
+    # Status and limits
+    status: TenantStatus = TenantStatus.TRIAL
     max_users: int = 5
     max_calls_per_month: int = 100
-    max_storage_mb: int = 1000  # 1GB
+    max_storage_mb: int = 1000
     
     # Features and settings
-    features: Dict[str, Any] = Field(default_factory=dict)
-    settings: Dict[str, Any] = Field(default_factory=dict)
+    features: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "stt_enabled": True,
+            "tts_enabled": True,
+            "llm_providers": ["openai"],
+            "knowledge_management": True,
+            "automation": False,
+            "analytics": True,
+            "api_access": False
+        }
+    )
+    settings: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "default_language": "ar-EG",
+            "default_voice": "arabic_female_1",
+            "call_timeout_seconds": 300,
+            "max_call_duration_minutes": 30,
+            "auto_transcription": True,
+            "data_retention_days": 365
+        }
+    )
     
     # Trial info
-    trial_ends_at: Optional[str] = None  # ISO date string
+    trial_ends_at: Optional[datetime] = None
+    
+    class Config:
+        use_enum_values = True
+
     
     def __init__(self, name: str, display_name: str, contact_email: str, **kwargs):
         """Initialize tenant with required fields."""

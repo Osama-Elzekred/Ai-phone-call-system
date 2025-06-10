@@ -1,8 +1,8 @@
-"""Initial schema
+"""initial_auth_schema
 
-Revision ID: 6c6fcf9133ce
+Revision ID: f1b409fc619c
 Revises: 
-Create Date: 2025-06-06 01:10:42.295936
+Create Date: 2025-06-10 09:12:19.581050
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '6c6fcf9133ce'
+revision = 'f1b409fc619c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -48,55 +48,27 @@ def upgrade() -> None:
     op.create_index(op.f('ix_calls_phone_number'), 'calls', ['phone_number'], unique=False)
     op.create_index(op.f('ix_calls_session_id'), 'calls', ['session_id'], unique=False)
     op.create_index(op.f('ix_calls_tenant_id'), 'calls', ['tenant_id'], unique=False)
-    op.create_table('tenants_persistence',
-    sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('display_name', sa.String(length=200), nullable=False),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('max_users', sa.Integer(), nullable=False),
-    sa.Column('max_calls_per_month', sa.Integer(), nullable=False),
-    sa.Column('features_stt_enabled', sa.Boolean(), nullable=False),
-    sa.Column('features_tts_enabled', sa.Boolean(), nullable=False),
-    sa.Column('features_llm_enabled', sa.Boolean(), nullable=False),
-    sa.Column('features_automation_enabled', sa.Boolean(), nullable=False),
-    sa.Column('features_knowledge_base_enabled', sa.Boolean(), nullable=False),
-    sa.Column('subscription_plan', sa.String(length=50), nullable=False),
-    sa.Column('subscription_expires_at', sa.DateTime(), nullable=True),
+    op.create_table('tenants',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('display_name', sa.String(length=200), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('contact_email', sa.String(length=255), nullable=False),
+    sa.Column('contact_phone', sa.String(length=50), nullable=True),
+    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('max_users', sa.Integer(), nullable=False),
+    sa.Column('max_calls_per_month', sa.Integer(), nullable=False),
+    sa.Column('max_storage_mb', sa.Integer(), nullable=False),
+    sa.Column('features', sa.JSON(), nullable=False),
+    sa.Column('settings', sa.JSON(), nullable=False),
+    sa.Column('trial_ends_at', sa.DateTime(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
-    op.create_table('users_persistence',
-    sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('username', sa.String(length=50), nullable=False),
-    sa.Column('full_name', sa.String(length=200), nullable=False),
-    sa.Column('phone_number', sa.String(length=20), nullable=True),
-    sa.Column('password_hash', sa.String(length=255), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('is_email_verified', sa.Boolean(), nullable=False),
-    sa.Column('role', sa.String(length=50), nullable=False),
-    sa.Column('failed_login_attempts', sa.Integer(), nullable=False),
-    sa.Column('locked_until', sa.DateTime(), nullable=True),
-    sa.Column('last_login_at', sa.DateTime(), nullable=True),
-    sa.Column('password_changed_at', sa.DateTime(), nullable=True),
-    sa.Column('avatar_url', sa.String(length=500), nullable=True),
-    sa.Column('timezone', sa.String(length=50), nullable=False),
-    sa.Column('language', sa.String(length=10), nullable=False),
-    sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.Column('is_deleted', sa.Boolean(), nullable=False),
-    sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.Column('tenant_id', sa.UUID(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_users_persistence_email'), 'users_persistence', ['email'], unique=True)
-    op.create_index(op.f('ix_users_persistence_tenant_id'), 'users_persistence', ['tenant_id'], unique=False)
-    op.create_index(op.f('ix_users_persistence_username'), 'users_persistence', ['username'], unique=False)
     op.create_table('call_sessions',
     sa.Column('session_id', sa.String(length=100), nullable=False),
     sa.Column('call_id', sa.UUID(), nullable=False),
@@ -132,19 +104,81 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_call_sessions_session_id'), 'call_sessions', ['session_id'], unique=True)
     op.create_index(op.f('ix_call_sessions_tenant_id'), 'call_sessions', ['tenant_id'], unique=False)
+    op.create_table('users',
+    sa.Column('email', sa.String(length=255), nullable=False),
+    sa.Column('username', sa.String(length=50), nullable=False),
+    sa.Column('phone_number', sa.String(length=20), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_email_verified', sa.Boolean(), nullable=False),
+    sa.Column('role', sa.String(length=20), nullable=False),
+    sa.Column('first_name', sa.String(length=100), nullable=False),
+    sa.Column('last_name', sa.String(length=100), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('email_verified', sa.Boolean(), nullable=False),
+    sa.Column('phone_verified', sa.Boolean(), nullable=False),
+    sa.Column('failed_login_attempts', sa.Integer(), nullable=False),
+    sa.Column('locked_until', sa.DateTime(), nullable=True),
+    sa.Column('last_login_at', sa.DateTime(), nullable=True),
+    sa.Column('password_changed_at', sa.DateTime(), nullable=True),
+    sa.Column('avatar_url', sa.String(length=500), nullable=True),
+    sa.Column('timezone', sa.String(length=50), nullable=False),
+    sa.Column('language', sa.String(length=10), nullable=False),
+    sa.Column('bio', sa.Text(), nullable=True),
+    sa.Column('tenant_id', sa.UUID(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+    op.create_index(op.f('ix_users_tenant_id'), 'users', ['tenant_id'], unique=False)
+    op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=False)
+    op.create_table('user_preferences',
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('theme', sa.String(length=20), nullable=False),
+    sa.Column('language_ui', sa.String(length=10), nullable=False),
+    sa.Column('sidebar_collapsed', sa.Boolean(), nullable=False),
+    sa.Column('email_notifications', sa.Boolean(), nullable=False),
+    sa.Column('push_notifications', sa.Boolean(), nullable=False),
+    sa.Column('sms_notifications', sa.Boolean(), nullable=False),
+    sa.Column('auto_answer_calls', sa.Boolean(), nullable=False),
+    sa.Column('preferred_tts_voice', sa.String(length=50), nullable=False),
+    sa.Column('preferred_stt_model', sa.String(length=50), nullable=False),
+    sa.Column('max_call_duration', sa.Integer(), nullable=False),
+    sa.Column('default_dashboard_view', sa.String(length=50), nullable=False),
+    sa.Column('items_per_page', sa.Integer(), nullable=False),
+    sa.Column('custom_settings', sa.Text(), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('tenant_id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_user_preferences_tenant_id'), 'user_preferences', ['tenant_id'], unique=False)
+    op.create_index(op.f('ix_user_preferences_user_id'), 'user_preferences', ['user_id'], unique=True)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_user_preferences_user_id'), table_name='user_preferences')
+    op.drop_index(op.f('ix_user_preferences_tenant_id'), table_name='user_preferences')
+    op.drop_table('user_preferences')
+    op.drop_index(op.f('ix_users_username'), table_name='users')
+    op.drop_index(op.f('ix_users_tenant_id'), table_name='users')
+    op.drop_index(op.f('ix_users_email'), table_name='users')
+    op.drop_table('users')
     op.drop_index(op.f('ix_call_sessions_tenant_id'), table_name='call_sessions')
     op.drop_index(op.f('ix_call_sessions_session_id'), table_name='call_sessions')
     op.drop_table('call_sessions')
-    op.drop_index(op.f('ix_users_persistence_username'), table_name='users_persistence')
-    op.drop_index(op.f('ix_users_persistence_tenant_id'), table_name='users_persistence')
-    op.drop_index(op.f('ix_users_persistence_email'), table_name='users_persistence')
-    op.drop_table('users_persistence')
-    op.drop_table('tenants_persistence')
+    op.drop_table('tenants')
     op.drop_index(op.f('ix_calls_tenant_id'), table_name='calls')
     op.drop_index(op.f('ix_calls_session_id'), table_name='calls')
     op.drop_index(op.f('ix_calls_phone_number'), table_name='calls')

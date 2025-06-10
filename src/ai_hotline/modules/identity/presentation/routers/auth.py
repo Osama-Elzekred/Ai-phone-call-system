@@ -12,6 +12,7 @@ from src.ai_hotline.shared.exceptions import (
 )
 from src.ai_hotline.modules.identity.application.services.auth_service import AuthenticationService
 from src.ai_hotline.modules.identity.infrastructure.repositories.user_repository import SqlAlchemyUserRepository
+from src.ai_hotline.modules.identity.infrastructure.repositories.tenant_repository import SqlAlchemyTenantRepository
 from src.ai_hotline.modules.identity.presentation.schemas.auth import (
     LoginRequest,
     LoginResponse,
@@ -19,7 +20,9 @@ from src.ai_hotline.modules.identity.presentation.schemas.auth import (
     RefreshTokenResponse,
     ChangePasswordRequest,
     UserResponse,
-    ErrorResponse
+    ErrorResponse,
+    RegisterUserRequest,
+    RegisterTenantWithAdminRequest
 )
 
 # Security scheme
@@ -32,7 +35,8 @@ router = APIRouter(tags=["Authentication"])
 def get_auth_service(db: Session = Depends(get_db)) -> AuthenticationService:
     """Dependency to get authentication service."""
     user_repository = SqlAlchemyUserRepository(db)
-    return AuthenticationService(user_repository)
+    tenant_repository = SqlAlchemyTenantRepository(db)
+    return AuthenticationService(user_repository, tenant_repository)
 
 
 def get_current_user(
@@ -51,6 +55,94 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+@router.post("/register-tenant-admin", response_model=LoginResponse)
+async def register_tenant_admin(
+    request: RegisterTenantWithAdminRequest,
+    auth_service: AuthenticationService = Depends(get_auth_service)
+):
+    """
+    Register a new tenant admin user.
+    
+    Args:
+        request: Tenant registration data
+        auth_service: Authentication service
+        
+    Returns:
+        Registered tenant admin user information
+        
+    Raises:
+        HTTPException: If registration fails
+    """
+    try:
+        tenant, user, access_token, refresh_token = await auth_service.register_tenant_with_admin(
+            tenant_name=request.tenant_name,
+            tenant_display_name=request.tenant_display_name,
+            admin_email=request.admin_email,
+            admin_password=request.admin_password,
+            admin_username=request.admin_username,
+        )
+        
+        return LoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=30 * 60,  # 30 minutes
+            user=UserResponse.from_orm(user)
+        )
+        
+    except BusinessRuleViolationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
+        )
+
+@router.post("/register-tenant-user", response_model=LoginResponse)
+async def register_tenant_user(
+    request: RegisterUserRequest,
+    auth_service: AuthenticationService = Depends(get_auth_service)
+):
+    """
+    Register a new user.
+    
+    Args:
+        request: User registration data
+        auth_service: Authentication service
+        
+    Returns:
+        Registered user information
+        
+    Raises:
+        HTTPException: If registration fails
+    """
+    try:
+        user, access_token, refresh_token = await auth_service.register_tenant_user(
+            email=request.email,
+            password=request.password,
+            username=request.username,
+            tenant_id=request.tenant_id
+        )
+        
+        return LoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=30 * 60,  # 30 minutes
+            user=UserResponse.from_orm(user)
+        )
+        
+    except BusinessRuleViolationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
+        )
 
 @router.post("/login", response_model=LoginResponse)
 async def login(

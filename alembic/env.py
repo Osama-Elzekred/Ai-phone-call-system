@@ -8,11 +8,11 @@ import sys
 # Add the src directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-# Import your models here
+# Import Base and settings
 from src.ai_hotline.shared.database.models import Base
 from src.ai_hotline.shared.config.settings import get_settings
 
-# Import all your models to ensure they're registered with SQLAlchemy
+# Import ALL models explicitly to ensure they're registered
 from src.ai_hotline.modules.identity.infrastructure.persistence.models import (
     TenantModel, 
     UserModel,
@@ -22,6 +22,9 @@ from src.ai_hotline.modules.call_processing.infrastructure.persistence.models im
     CallModel,
     CallSessionModel
 )
+
+# Register all models with Base.metadata
+__all__ = ['TenantModel', 'UserModel', 'UserPreferencesModel', 'CallModel', 'CallSessionModel']
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -29,11 +29,13 @@ class UserMapper:
             status=model.status,
             email_verified=model.email_verified,
             phone_verified=model.phone_verified,
-            last_login=model.last_login,
+            last_login=model.last_login_at,
             failed_login_attempts=model.failed_login_attempts,
             locked_until=model.locked_until,
             created_at=model.created_at,
-            updated_at=model.updated_at        )
+            updated_at=model.updated_at,
+            is_active=model.is_active,
+        )
     
     @staticmethod
     def to_model(entity: User) -> UserModel:
@@ -53,11 +55,12 @@ class UserMapper:
             status=entity.status,
             email_verified=entity.email_verified,
             phone_verified=entity.phone_verified,
-            last_login=entity.last_login,
+            last_login_at=entity.last_login_at,
             failed_login_attempts=entity.failed_login_attempts,
             locked_until=entity.locked_until,
             created_at=entity.created_at,
-            updated_at=entity.updated_at        )
+            updated_at=entity.updated_at,
+            )
         
         return model
     
@@ -73,7 +76,7 @@ class UserMapper:
         model.status = entity.status
         model.email_verified = entity.email_verified
         model.phone_verified = entity.phone_verified
-        model.last_login = entity.last_login
+        model.last_login_at = entity.last_login_at
         model.failed_login_attempts = entity.failed_login_attempts
         model.locked_until = entity.locked_until
         model.updated_at = entity.updated_at
@@ -90,6 +93,12 @@ class TenantMapper:
         if not model:
             return None
         
+        import json
+        
+        # Parse JSON strings to dictionaries if they exist
+        features = json.loads(model.features) if model.features else {}
+        settings = json.loads(model.settings) if model.settings else {}
+
         return Tenant(
             id=model.id,
             name=model.name,
@@ -101,9 +110,10 @@ class TenantMapper:
             max_users=model.max_users,
             max_calls_per_month=model.max_calls_per_month,
             max_storage_mb=model.max_storage_mb,
-            features=model.features or {},
-            settings=model.settings or {},
-            trial_ends_at=model.trial_ends_at,            created_at=model.created_at,
+            features=features or {},
+            settings=settings or {},
+            trial_ends_at=model.trial_ends_at,            
+            created_at=model.created_at,
             updated_at=model.updated_at
         )
     
@@ -112,6 +122,8 @@ class TenantMapper:
         """Convert domain entity to SQLAlchemy model."""
         if not entity:
             return None
+        
+        import json
         
         return TenantModel(
             id=entity.id,
@@ -122,9 +134,10 @@ class TenantMapper:
             contact_phone=entity.contact_phone,
             status=entity.status,
             max_users=entity.max_users,
-            max_calls_per_month=entity.max_calls_per_month,            max_storage_mb=entity.max_storage_mb,
-            features=entity.features,
-            settings=entity.settings,
+            max_calls_per_month=entity.max_calls_per_month,            
+            max_storage_mb=entity.max_storage_mb,
+            features=json.dumps(entity.features) if entity.features else None,
+            settings=json.dumps(entity.settings) if entity.settings else None,
             trial_ends_at=entity.trial_ends_at,
             created_at=entity.created_at,
             updated_at=entity.updated_at

@@ -4,7 +4,7 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
-
+from uuid import UUID
 import bcrypt
 from jose import jwt
 from pydantic import BaseModel
@@ -89,9 +89,9 @@ class TokenManager:
     
     def create_access_token(
         self,
-        user_id: str,
+        user_id: str | UUID,
         username: str,
-        tenant_id: str,
+        tenant_id: str | UUID,
         email: str,
         roles: list[str],
         expires_delta: Optional[timedelta] = None
@@ -116,10 +116,14 @@ class TokenManager:
         else:
             expire = now + timedelta(minutes=self.access_token_expire_minutes)
         
+        # Convert UUID fields to strings
+        user_id_str = str(user_id) if isinstance(user_id, UUID) else user_id
+        tenant_id_str = str(tenant_id) if isinstance(tenant_id, UUID) else tenant_id
+
         payload = {
-            "sub": user_id,
+            "sub": user_id_str,
             "username": username,
-            "tenant_id": tenant_id,
+            "tenant_id": tenant_id_str,
             "email": email,
             "roles": roles,
             "exp": expire,
@@ -132,8 +136,8 @@ class TokenManager:
     
     def create_refresh_token(
         self,
-        user_id: str,
-        tenant_id: str,
+        user_id: str | UUID,
+        tenant_id: str | UUID,
         expires_delta: Optional[timedelta] = None
     ) -> str:
         """Create a refresh token.
@@ -153,9 +157,13 @@ class TokenManager:
         else:
             expire = now + timedelta(days=self.refresh_token_expire_days)
         
+        # Convert UUID fields to strings
+        user_id_str = str(user_id) if isinstance(user_id, UUID) else user_id
+        tenant_id_str = str(tenant_id) if isinstance(tenant_id, UUID) else tenant_id
+    
         payload = {
-            "sub": user_id,
-            "tenant_id": tenant_id,
+            "sub": user_id_str,
+            "tenant_id": tenant_id_str,
             "exp": expire,
             "iat": now,
             "jti": secrets.token_urlsafe(16),
